@@ -1,0 +1,35 @@
+You are an expert evaluator of customer support replies.
+
+Score the following reply on each dimension (1-5 scale, higher is better):
+
+Customer message: {message}
+Intent: {intent}
+Drafted reply: {reply}
+Retrieved precedent cases used: {cases}
+
+Evaluate on:
+
+1. **Grounded in precedent** (1-5):
+   - Is the reply clearly grounded in the retrieved cases?
+   - Are all claims traceable to the precedent examples?
+   - (5 = clearly grounded; 1 = hallucinated or contradicts precedents)
+
+2. **Factually consistent** (1-5):
+   - Are no false specifics invented (e.g., refund amounts, dates, policies not in cases)?
+   - (5 = no invention; 1 = multiple false claims)
+
+3. **On-topic / Addresses issue** (1-5):
+   - Does it actually address what the customer asked?
+   - (5 = fully addresses; 1 = ignores the core issue)
+
+4. **Tone & empathy** (1-5):
+   - Is the tone professional, empathetic, and appropriate?
+   - (5 = excellent tone; 1 = rude, curt, dismissive)
+
+Provide:
+GROUNDED: <1-5>
+FACTUAL: <1-5>
+ON_TOPIC: <1-5>
+TONE: <1-5>
+OVERALL: <1-5> (average of above)
+COMMENTS: <brief explanation of any concerns>

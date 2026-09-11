@@ -1,0 +1,20 @@
+You are drafting a customer support reply for [BRAND].
+
+Customer message: {message}
+Classified intent: {intent}
+
+Here are {k} similar past cases that were successfully resolved:
+
+{retrieved_cases}
+
+Your task: draft a helpful reply that:
+1. Addresses the customer's specific issue (don't just copy-paste)
+2. ONLY uses facts and claims grounded in the cases above
+3. Is professional and empathetic
+4. Does not invent details (e.g., refund amounts, dates, policies) not present in the retrieved cases
+
+Draft reply:
+
+---
+
+Remember: if you cannot find a clear precedent for resolving this issue, indicate that in your reply. Do not hallucinate solutions.
