@@ -179,21 +179,24 @@ def reconstruct_threads(df: pd.DataFrame) -> List[Dict]:
     return threads
 
 
-def _build_thread_forward(root_id, tweet_map: Dict, visited: set) -> List[Dict]:
+def _build_thread_forward(root_id, tweet_map: Dict, visited: set) -> Dict:
     """
     Recursively build a thread starting from a root tweet.
+    Returns: dict with messages list and metadata
     """
-    thread = []
+    messages = []
     
     def traverse(tweet_id):
         if tweet_id in visited or tweet_id not in tweet_map:
             return
         visited.add(tweet_id)
-        tweet = tweet_map[tweet_id]
-        thread.append(tweet)
+        tweet_row = tweet_map[tweet_id]
+        # Convert pandas Series to dict
+        msg = dict(tweet_row)
+        messages.append(msg)
         
         # Find replies to this tweet
-        response_ids = tweet.get("response_tweet_id")
+        response_ids = tweet_row.get("response_tweet_id")
         if pd.notna(response_ids):
             # response_tweet_id might be a string representation of list or comma-separated
             if isinstance(response_ids, str):
@@ -207,10 +210,15 @@ def _build_thread_forward(root_id, tweet_map: Dict, visited: set) -> List[Dict]:
                 traverse(resp_id)
     
     traverse(root_id)
-    return thread
+    
+    return {
+        "messages": messages,
+        "root_id": root_id,
+        "n_messages": len(messages),
+    }
 
 
-def is_thread_resolved(thread: List[Dict], brand: str) -> bool:
+def is_thread_resolved(thread: Dict, brand: str) -> bool:
     """
     Heuristic: thread is "resolved" if:
     1. Company has replied (the brand account itself responded)
@@ -219,7 +227,9 @@ def is_thread_resolved(thread: List[Dict], brand: str) -> bool:
     
     This is deliberately noisy; limitations will be documented.
     """
-    if len(thread) < 2:
+    messages = thread.get("messages", [])
+    
+    if len(messages) < 2:
         return False
     
     brand_lower = brand.lower()
@@ -227,7 +237,7 @@ def is_thread_resolved(thread: List[Dict], brand: str) -> bool:
     # Check if brand replied at all
     brand_replied = any(
         str(msg.get("author_id", "")).lower() == brand_lower 
-        for msg in thread
+        for msg in messages
     )
     
     if not brand_replied:
@@ -235,19 +245,19 @@ def is_thread_resolved(thread: List[Dict], brand: str) -> bool:
     
     # Find last message from brand
     last_brand_msg_idx = -1
-    for i in range(len(thread) - 1, -1, -1):
-        if str(thread[i].get("author_id", "")).lower() == brand_lower:
+    for i in range(len(messages) - 1, -1, -1):
+        if str(messages[i].get("author_id", "")).lower() == brand_lower:
             last_brand_msg_idx = i
             break
     
     # Check if customer sent follow-up after brand's last reply
-    if last_brand_msg_idx == len(thread) - 1:
+    if last_brand_msg_idx == len(messages) - 1:
         # Brand has last word
         return True
     elif last_brand_msg_idx >= 0:
         # Customer replied after brand
         # Check last customer message for escalation signals
-        last_customer_msg = thread[-1].get("text", "").lower()
+        last_customer_msg = messages[-1].get("text", "").lower()
         
         # Escalation patterns (unresolved)
         escalation_patterns = [
